@@ -1,90 +1,52 @@
-#include "main.h"
-
-void cleanup(va_list args, buffer_t *output);
-int run_printf(const char *format, va_list args, buffer_t *output);
-int _printf(const char *format, ...);
+#include "holberton.h"
 
 /**
- * cleanup - Peforms cleanup operations for _printf.
- * @args: A va_list of arguments provided to _printf.
- * @output: A buffer_t struct.
- */
-void cleanup(va_list args, buffer_t *output)
-{
-	va_end(args);
-	write(1, output->start, output->len);
-	free_buffer(output);
-}
-
-/**
- * run_printf - Reads through the format string for _printf.
- * @format: Character string to print - may contain directives.
- * @output: A buffer_t struct containing a buffer.
- * @args: A va_list of arguments.
+ *  _printf - Recreates printf
  *
- * Return: The number of characters stored to output.
- */
-int run_printf(const char *format, va_list args, buffer_t *output)
-{
-	int i, wid, prec, ret = 0;
-	char tmp;
-	unsigned char flags, len;
-	unsigned int (*f)(va_list, buffer_t *,
-			unsigned char, int, int, unsigned char);
-
-	for (i = 0; *(format + i); i++)
-	{
-		len = 0;
-		if (*(format + i) == '%')
-		{
-			tmp = 0;
-			flags = handle_flags(format + i + 1, &tmp);
-			wid = handle_width(args, format + i + tmp + 1, &tmp);
-			prec = handle_precision(args, format + i + tmp + 1,
-					&tmp);
-			len = handle_length(format + i + tmp + 1, &tmp);
-
-			f = handle_specifiers(format + i + tmp + 1);
-			if (f != NULL)
-			{
-				i += tmp + 1;
-				ret += f(args, output, flags, wid, prec, len);
-				continue;
-			}
-			else if (*(format + i + tmp + 1) == '\0')
-			{
-				ret = -1;
-				break;
-			}
-		}
-		ret += _memcpy(output, (format + i), 1);
-		i += (len != 0) ? 1 : 0;
-	}
-	cleanup(args, output);
-	return (ret);
-}
-
-/**
- * _printf - Outputs a formatted string.
- * @format: Character string to print - may contain directives.
+ *  @format: format specifier
  *
- * Return: The number of characters printed.
+ *  Return: Number of args length
  */
+
 int _printf(const char *format, ...)
 {
-	buffer_t *output;
-	va_list args;
-	int ret;
+
+	int (*get_f_spec)(va_list);
+	unsigned int index = 0, spec_count = 0;
+
+	va_list arg;
+
+	va_start(arg, format);
 
 	if (format == NULL)
 		return (-1);
-	output = init_buffer();
-	if (output == NULL)
-		return (-1);
 
-	va_start(args, format);
+	for (index = 0; format[index] != '\0'; index++)
+	{
+		if (format[index] == '%')
+		{
+			index++;
+			if (format[index] == '\0')
+				return (-1);
+			while (format[index] == ' ')
+				index++;
+			get_f_spec =  get_specifier(format[index]);
 
-	ret = run_printf(format, args, output);
-
-	return (ret);
+			if (get_f_spec == NULL)
+			{
+				_putchar('%');
+				_putchar(format[index]);
+				spec_count += 2;
+			}
+			else
+				spec_count += get_f_spec(arg);
+		}
+		else
+		{
+			_putchar(format[index]);
+			spec_count++;
+		}
+	}
+	va_end(arg);
+	return (spec_count);
 }
