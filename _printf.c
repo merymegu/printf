@@ -1,52 +1,51 @@
-#include "holberton.h"
+#include "main.h"
 
 /**
- *  _printf - Recreates printf
+ * _printf - formatted output conversion and print data.
+ * @format: input string.
  *
- *  @format: format specifier
- *
- *  Return: Number of args length
+ * Return: number of chars printed.
  */
-
 int _printf(const char *format, ...)
 {
+	unsigned int i = 0, len = 0, ibuf = 0;
+	va_list arguments;
+	int (*function)(va_list, char *, unsigned int);
+	char *buffer;
 
-	int (*get_f_spec)(va_list);
-	unsigned int index = 0, spec_count = 0;
-
-	va_list arg;
-
-	va_start(arg, format);
-
-	if (format == NULL)
+	va_start(arguments, format), buffer = malloc(sizeof(char) * 1024);
+	if (!format || !buffer || (format[i] == '%' && !format[i + 1]))
 		return (-1);
-
-	for (index = 0; format[index] != '\0'; index++)
+	if (!format[i])
+		return (0);
+	for (i = 0; format && format[i]; i++)
 	{
-		if (format[index] == '%')
+		if (format[i] == '%')
 		{
-			index++;
-			if (format[index] == '\0')
+			if (format[i + 1] == '\0')
+			{	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
 				return (-1);
-			while (format[index] == ' ')
-				index++;
-			get_f_spec =  get_specifier(format[index]);
-
-			if (get_f_spec == NULL)
-			{
-				_putchar('%');
-				_putchar(format[index]);
-				spec_count += 2;
 			}
 			else
-				spec_count += get_f_spec(arg);
+			{	function = get_print_func(format, i + 1);
+				if (function == NULL)
+				{
+					if (format[i + 1] == ' ' && !format[i + 2])
+						return (-1);
+					handl_buf(buffer, format[i], ibuf), len++, i--;
+				}
+				else
+				{
+					len += function(arguments, buffer, ibuf);
+					i += ev_print_func(format, i + 1);
+				}
+			} i++;
 		}
 		else
-		{
-			_putchar(format[index]);
-			spec_count++;
-		}
+			handl_buf(buffer, format[i], ibuf), len++;
+		for (ibuf = len; ibuf > 1024; ibuf -= 1024)
+			;
 	}
-	va_end(arg);
-	return (spec_count);
+	print_buf(buffer, ibuf), free(buffer), va_end(arguments);
+	return (len);
 }
